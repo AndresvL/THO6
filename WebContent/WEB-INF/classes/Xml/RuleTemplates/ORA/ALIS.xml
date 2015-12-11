@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties><entry key="template">CREATE or REPLACE TRIGGER #triggername
+ BEFORE INSERT or UPDATE OF #column1 ON #table1
+ FOR EACH ROW
+ DECLARE
+ E_LISTEXCEPTION EXCEPTION;
+ BEGIN
+ IF NOT :new.#column1 #operator (#values) THEN
+ RAISE E_LISTEXCEPTION;
+ END IF;
+ EXCEPTION WHEN E_LISTEXCEPTION THEN
+ RAISE_APPLICATION_ERROR(-20003, 'E_LISTEXCEPTION - #column1 violated rule: #triggername');
+ END;</entry>
+</properties>	

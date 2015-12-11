@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+<entry key="template">CREATE or REPLACE TRIGGER #triggername
+ BEFORE INSERT or UPDATE OF #column1 ON #table1
+ FOR EACH ROW
+ DECLARE
+ E_INTERCOMPAREEXCEPTION EXCEPTION;
+ datas #table2.#column2%TYPE;
+ column1 varchar(30);
+ column2 varchar(30);
+ sqlstatement varchar(200);
+ BEGIN
+ 	 select cols.COLUMN_NAME
+ 	 into column1
+	 from user_constraints cons, all_cons_columns cols
+	 where cons.owner = '#schema1'
+	 and cons.constraint_type = 'P'
+	 and cons.constraint_name in
+	 (
+		 select r_constraint_name from all_constraints
+		 where constraint_type in ('R')
+		 and table_name = '#table2'
+		 and owner = '#schema2'
+	 )
+	 and cons.constraint_name = cols.constraint_name
+	 and cons.table_name = '#table1';
+ 
+  	select cols.COLUMN_NAME
+  	into column2
+ 	from user_constraints cons, user_cons_columns cols
+ 	where cons.r_owner = '#schema2'
+ 	and cons.constraint_type = 'R'
+ 	and cons.r_constraint_name in
+ 	(
+ 		select constraint_name from all_constraints
+ 		where constraint_type in ('P', 'U')
+ 		and table_name = '#table1'
+ 		and owner = '#schema1'
+ 	 )
+ 	and cons.constraint_name = cols.constraint_name
+ 	and cons.table_name = '#table2';
+ 
+ 	sqlstatement := 'select #column2 from #table2 where #table1.:1 = #table2.:2'; 
+ 	EXECUTE IMMEDIATE sqlstatement INTO datas USING column1,column2;  
+
+ 	IF NOT :new.#column1 #operator datas THEN
+ 	RAISE E_INTERCOMPAREEXCEPTION;
+ 	END IF;
+ 	EXCEPTION WHEN E_INTERCOMPAREEXCEPTION THEN
+ 	RAISE_APPLICATION_ERROR(-20007, 'E_INTERCOMPAREEXCEPTION - #column1 violated rule: #triggername');
+ END;</entry>
+</properties>
+	
